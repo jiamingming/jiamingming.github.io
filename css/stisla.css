@@ -134,8 +134,8 @@ html, body {
 }
 
 .article-read .article-picture {
-	width: 80%;
-	height:80%;
+	width: 100%;
+	height:50%;
 	margin-bottom: 20px;
 	display:table-cell;
 	vertical-align:middle;
