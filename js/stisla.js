@@ -73,7 +73,7 @@ $(function() {
 				$element += '	{author}';
 				$element += '</div>';
 				$element += '</div>';
-				$element += '<figure class="article-picture"><img height="1080" width="640"  src="{picture}"></figure>';
+				$element += '<figure class="article-picture"><img src="{picture}"></figure>';
 				$element += '<div class="article-content">';
 				$element += '{content}';
 				$element += '</div>';
