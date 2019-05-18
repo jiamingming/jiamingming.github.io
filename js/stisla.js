@@ -79,9 +79,10 @@ $(function() {
 				$element += '</div>';
 				$element += '</div>';
 				$element += '</div>';
-
+		var data_id = $this.attr("data-id");
+		var arurl = "mock/article"+data_id+".json"
 		$.ajax({
-			url: "mock/article.json",
+			url: arurl,
 			dataType: 'json',
 			beforeSend: function() {
 				loading.show();
