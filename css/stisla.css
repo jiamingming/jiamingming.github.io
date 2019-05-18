@@ -135,8 +135,9 @@ html, body {
 
 .article-read .article-picture {
 	width: 80%;
-	height:80%
+	height:80%;
 	margin-bottom: 20px;
+	display:table-cell;
 }
 
 .article-read .article-picture img {
