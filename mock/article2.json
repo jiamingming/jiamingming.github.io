@@ -1,7 +1,224 @@
 {
 	"title": "绚烂",
 	"picture": "img/news/ming2.jpg",
-	"content":"<p>“是划过天边的刹那火焰”--朴树</p><p>天空此时耀眼的瞬间.</p>",
+	"content":"<p><strong>调用方式为  官方支持的  RESTful api with json over http *</strong></p>
+<p>建议使用这种方式查询,不同语言的不同版本的api 查询的支持力度不同,采用这种方式只需关注查询需求来封装相应的参数.
+理论上, sql可实现的查询条件,es都可以实现,但更推荐使用es进行大数据量时 多查询条件时的聚合.
+search查询时,请求 curl -XPOST &#39;localhost:9200(es服务地址)/laike_lyt20(索引库名)/<em>search?pretty, 参数为指定条件的json数据.
+这里只示例在项目中少部分常用,更详细使用参照官方文档,地址如下
+[https://www.elastic.co/guide/cn/elasticsearch/guide/current/</em>talking_to_elasticsearch.html](<a href='https://www.elastic.co/guide/cn/elasticsearch/guide/current/_talking_to_elasticsearch.html' target='_blank' class='url'>https://www.elastic.co/guide/cn/elasticsearch/guide/current/_talking_to_elasticsearch.html</a>)</p>
+<p>常见的查询条件,不同条件可嵌套组合
+<strong>bool 过滤 </strong>可以用来合并多个过滤条件查询的布尔逻辑，它包含如下操作：</p>
+<ul>
+<li>must :        多个查询条件的完全匹配, 相当于 and</li>
+<li>must_not : 多个查询条件的相反匹配, 相当于 not</li>
+<li>should :     至少有一个查询条件匹配, 相当于 or</li>
+
+</ul>
+<pre><code>这些参数可以分别继承一个过滤条件或者一个过滤条件的数组：
+{
+    &quot;bool&quot;: {
+        &quot;must&quot;:     { &quot;term&quot;: { &quot;sex&quot;: &quot;male&quot; }},
+        &quot;must_not&quot;: { &quot;term&quot;: { &quot;age&quot;:    &quot;15&quot;  }},
+        &quot;should&quot;: [
+                    { &quot;term&quot;: { &quot;salary&quot;: &quot;mid&quot;}},
+                    { &quot;term&quot;: { &quot;house&quot;:  true   }}
+        ]
+    }
+}
+</code></pre>
+<p><strong>aggs  </strong>场景以及示例如下</p>
+<pre><code>// 相当于对指定的字段进行groupby,例如
+&quot;aggs&quot;: {
+    &quot;group_by_m&quot;: {
+      &quot;terms&quot;: {
+        &quot;field&quot;: &quot;grade&quot;
+      }
+   }
+}
+ 
+//对屏数进行sum求和, 除sum求和外, 还支持 avg,max,min等
+&quot;aggs&quot;:{
+        &quot;peos&quot;:{
+            &quot;sum&quot;:{&quot;field&quot;:&quot;total&quot;}
+        },
+        &quot;scs&quot;:{
+            &quot;sum&quot;:{&quot;field&quot;:&quot;screens&quot;}
+        }
+}
+</code></pre>
+<p>关于query,   一个常见的组合嵌套查询示例,完整参数如下</p>
+<pre><code>{
+     
+    &quot;from&quot;: 0,                                              //--&gt;p1
+    &quot;size&quot;: 10,                                             //
+    &quot;_source&quot;: [&quot;lon&quot;,&quot;lat&quot;,&quot;region&quot;,&quot;dev001001001_1&quot;],     //--&gt;p2
+    &quot;query&quot;: {
+        &quot;bool&quot;: {
+            &quot;must&quot;: [
+                {
+                    &quot;terms&quot;: {&quot;scene&quot;: [1,10]}              //--&gt;s1
+                },
+                {
+                    &quot;bool&quot;: {                               //--&gt;s2
+                        &quot;should&quot;: [
+                        {
+                            &quot;bool&quot;: {
+                                &quot;must&quot;: [
+                                    {&quot;match_phrase&quot;: {&quot;province&quot;: &quot;北京市&quot;}}]
+                            }
+                        },
+                        {
+                            &quot;bool&quot;: {
+                                &quot;must&quot;: [
+                                    {&quot;match_phrase&quot;: {&quot;city&quot;: &quot;辛集市&quot;}},
+                                    {&quot;match_phrase&quot;: {&quot;province&quot;: &quot;河北省&quot;}
+                                }]
+                            }
+                        }]
+                    }
+                }
+            ],
+            &quot;filter&quot;: {
+                &quot;bool&quot;: {
+                    &quot;should&quot;: [
+                        {
+                            &quot;bool&quot;: {
+                                &quot;must&quot;: [                   //--&gt;s3
+                                    {
+                                        &quot;range&quot;: {&quot;lon&quot;: {&quot;lte&quot;: 129.434299,&quot;gt&quot;: 100.492063}}
+                                    },
+                                    {
+                                        &quot;range&quot;: {&quot;lat&quot;: {&quot;lte&quot;: 49.904685,&quot;gt&quot;: 30}}
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    &quot;sort&quot;: {                                               //--&gt;s4 
+        &quot;_script&quot;: {
+            &quot;type&quot;: &quot;number&quot;,
+            &quot;script&quot;: {
+                &quot;inline&quot;: &quot;doc[&#39;1525&#39;].value+doc[&#39;7052&#39;].value&quot;,
+                &quot;lang&quot;: &quot;painless&quot;
+            },
+            &quot;order&quot;: &quot;desc&quot;
+        }
+    },
+     
+    &quot;track_scores&quot;: true
+}
+</code></pre>
+<p>p1 
+from,size为分页参数,使用这种分页方式时,
+在请求url上尽量指定分片为一个分片(还有更高效的分页方式为深度分页-详情见官方文档)
+例如指定主分片 <a href='http://172.24.184.6:9200/itags/_search?pretty&preference=_primary,'>http://172.24.184.6:9200/itags/<em>search?pretty&amp;preference=</em>primary,</a>
+否则会出现因为得分相同而导致的不同分页产生重复数据
+p2
+指定要返回的字段,如果单条文档记录字段过多, 指定需要返回的字段数据</p>
+<ul>
+<li>条件s1 和条件s2之间的关系为 and</li>
+<li>条件s1的terms 代表 scenes in (1,10)  即 scenes == 1 or scenes == 10</li>
+<li>条件s2 代表关系如下</li>
+
+</ul>
+<p>           地域条件-1 = 北京市
+           地域条件-2 = 河北省  and 辛集市   (多级地域间 关系为and)
+           条件s2 = 地域条件-1  or  地域条件-2 
+filter filter在此场景下需嵌套在一个bool过滤器中
+过滤关系与bool下其他条件平级</p>
+<ul>
+<li>s3代表 含义如下: </li>
+
+</ul>
+<p>           ( lon &lt;= 129.434299 and &gt;= 100.492063 )  and  ( lat &lt;=30 and &gt;= 49.90 )
+           和上面条件平级的多个经纬度的范围,可在 should数组中按照上面条件的格式进行追加.</p>
+<ul>
+<li>s4 是对过滤出的结果进行排序, 排序可指定特定字段,特需的需求可用painless脚本,详情见下述</li>
+
+</ul>
+<p>关于<strong>aggs,*</strong>**  <strong>*</strong>以**一个需求 (楼宇通-按条件筛选-给出能在地图上展示的  楼宇数/屏幕数/得分数总和  等)为例</p>
+<pre><code>&quot;aggs&quot;: {
+    &quot;a1&quot;: {
+        &quot;terms&quot;: {
+            &quot;field&quot;: &quot;province&quot;,                    //--&gt;s1
+            &quot;size&quot;: 2000,                      
+            &quot;order&quot;: {                              //--&gt;s2
+                &quot;psc&quot;: &quot;desc&quot;
+            }
+        },
+        &quot;aggs&quot;: {
+            &quot;peos&quot;: {&quot;sum&quot;: {&quot;field&quot;: &quot;total&quot;}},    //--&gt;s3
+            &quot;psc&quot;: {                                //--&gt;s4
+                &quot;sum&quot;: {
+                    &quot;script&quot;: &quot;doc[&#39;b_14026&#39;].value+doc[&#39;b_11516&#39;].value&quot;
+                }
+            },
+            &quot;scs&quot;: {&quot;sum&quot;: {&quot;field&quot;: &quot;screens&quot;}}
+        }
+    }
+}
+</code></pre>
+<p>该条件代表所代表的含义如下
+s1 ,按省-province 字段进行group by, 
+其中 这里的size 指定的是返回分组结果中的前多少条,
+如果没有特殊需求, size值为一个合理值,</p>
+<ul>
+<li>比如已知数据里共有100个省, 那么size至少应该为100</li>
+<li>s3 ,对每个省下的 total字段进行sum求和</li>
+<li>s4, 对每个省下的 (b_14026+b_11516) 两个标签的和 进行 sum 求和</li>
+<li>s2, group by 的结果, 按照s4条件进行排序,排序方式为 desc</li>
+
+</ul>
+<p>这样能给出的结果就是每个省份下不同指标的sum值,同时按照指定的sum值排序</p>
+<h3>painless脚本调用示例</h3>
+<p>例如: 某索引库中存储的文档为每个学生的成绩单, 每篇文档包含的字段如下</p>
+<ul>
+<li>姓名-name</li>
+<li>语文成绩-chinese</li>
+<li>数学成绩-math</li>
+<li>英语成绩-eng</li>
+
+</ul>
+<p>现在需要对每位学生的 语文+数学 的两门科目的总分加和, 然后按照这两门科目的总分进行排名
+则查询条件可按照下面的方式封装(sort)</p>
+<pre><code>curl -XPOST &#39;localhost:9200/istus/_search?pretty&#39; -d &#39;
+{
+    &quot;_source&quot;: [&quot;name&quot;,&quot;chinese&quot;,&quot;math&quot;],           //返回字段信息
+    &quot;size&quot;:100,                                     //返回条目数
+    &quot;query&quot;: {
+        &quot;match_all&quot;: { 
+        }  
+    },
+    &quot;sort&quot;: {                                       //用painless对指定字段加和然后排序
+        &quot;_script&quot;: {
+            &quot;type&quot;: &quot;number&quot;,                       //结果类型
+            &quot;order&quot;: &quot;desc&quot;,
+            &quot;script&quot;: {
+                &quot;lang&quot;: &quot;painless&quot;,                 //指定语言类型
+                &quot;inline&quot;: &quot;doc[&#39;chinese&#39;].value + doc[&#39;math&#39;].value&quot;
+            }
+        }
+    }
+}&#39;
+</code></pre>
+<p>若有 不支持 sriprt 相关的提示, 需要在es的配置文件中开启对脚本的支持(es默认支持painless语言,一般不用单独配置)
+配置文件所在路径:  <strong>es_base_dir/config </strong>
+<strong>elasticsearch.yml</strong>
+文件追加如下 配置
+<strong>script.painless.regex.enabled: true</strong></p>
+<h2><strong>常见问题</strong></h2>
+<figure><table>
+<thead>
+<tr><th style='text-align:left;' >&nbsp;</th><th style='text-align:center;' >说明</th></tr></thead>
+<tbody><tr><td style='text-align:left;' >match和match_phrase</td><td style='text-align:center;' >地域字段按照中文存储, 例如两篇文档中的region字段分别为大兴区朝阳区用match匹配 &quot;大兴区&quot;, es会对中文进行分词(ik分词器),会把所有包含&quot;区&quot;这个词的文档全部检索出来而用match_phrase则用&quot;大兴区&quot; 整个词去匹配,可以避免这个问题尽管如此,仍然建议对这种字段映射成相关的code, 在数据量大时无论检索聚合效率还是存储空间都会有提升</td></tr><tr><td style='text-align:left;' >filter的使用</td><td style='text-align:center;' >应将filter过滤放在一个bool的过滤器中, 在嵌套的查询条件中尤其如此</td></tr><tr><td style='text-align:left;' >存储文档的处理上</td><td style='text-align:center;' >应避免稀疏，一是对存储的影响，每个filed，都需要一个byte。二是对索引和查询的影响</td></tr></tbody>
+</table></figure>
+<p>&nbsp;</p>
+",
 	"date": "1/1/2015",
 	"author": "Ming J",
 	"category": "土地"
