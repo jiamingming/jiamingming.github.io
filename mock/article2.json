@@ -1,8 +1,8 @@
  {
-          "title": "es相关",
-          "picture": "",
-          "content":"<h5>调用方式为  官方支持的  RESTful api with json over http</h5><p>建议使用这种方式查询,不同语言的不同版本的api 查询的支持力度不同,采用这种方式只需关注查询需求来封装相应的参数. 理论上, sql可实现的查询条件,es都可以实现,但更推荐使用es进行大数据量时 多查询条件时的聚合. search查询时,请求 curl -XPOST &#39;localhost:9200(es服务地址)/laike_lyt20(索引库名)/_search?pretty, 参数为指定条件的json数据. 这里只示例在项目中少部分常用,更详细使用参照官方文档,地址如下</p><a href="https://www.elastic.co/guide/cn/elasticsearch/guide/current/_talking_to_elasticsearch.html"><p>&nbsp;</p>",
-          "date": "1/1/2015",
+          "title": "要担当呀",
+          "picture": "img/news/swa.jpeg",
+        "content":"<p>如果是自己决定要做的事情，那就做好。</p><p>要是中途不想做了，那就提出来，让别人去接手。不要一边做，一边抱怨。</p>",
+          "date": "17/09/2019",
           "author": "Ming J",
           "category": "土地"
   }
