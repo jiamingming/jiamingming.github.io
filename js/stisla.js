@@ -80,7 +80,7 @@ $(function() {
 				$element += '</div>';
 				$element += '</div>';
 		var data_id = $this.attr("data-id");
-		var arurl = "mock/article"+data_id+".json"
+		var arurl = "article/article"+data_id+".json"
 		$.ajax({
 			url: arurl,
 			dataType: 'json',
